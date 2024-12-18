@@ -1,78 +1,98 @@
-Project Title: Cloud Service Access Management System
-Name: Issac Zhou
-CWID: 885251249
-Class: CPSC 449
-Project Description:
-This project implements a backend system that manages access to various cloud services based on user subscriptions. Users (customers) subscribe to plans, each plan defines which APIs the user can access and how many requests they can make before hitting the limit. Administrators can manage subscription plans, permissions, and user subscriptions. Once a user reaches their allocated limit for a certain service, their access is restricted until the limit resets or their subscription changes.
+Cloud Service Access Management System
 
-Key Features Implemented:
+Author: Issac Zhou  
+CWID: 885251249  
 
-Subscription Plan Management:
+Project Description:  
+This project implements a backend system for managing access to cloud services based on user subscriptions. The system dynamically manages API permissions, tracks usage, and restricts access when usage limits are exceeded. It features:  
+- 6 Cloud Service APIs (simulated).  
+- Subscription Plan Management (create, modify, delete plans).  
+- Permission Management (add, modify, delete permissions).  
+- User Subscription Handling (subscribe to plans, view usage statistics).  
+- Access Control (validate API requests based on user permissions and limits).  
+- Usage Tracking and Enforcement (track requests, restrict access beyond limits).  
 
-Create, modify, and delete subscription plans.
-Each plan has permissions (API endpoints allowed) and usage limits.
-Permission Management:
+Prerequisites:  
+Software Requirements:  
+1. Python 3.9+  
+2. pip (Python package manager)  
+3. Virtual Environment Tool:  
+   - For Mac/Linux: venv  
+   - For Windows: virtualenv (optional).  
+4. FastAPI and Uvicorn for the backend.  
+5. Postman (optional, for testing APIs).  
 
-Add, modify, or delete permissions (essentially the allowed APIs).
-User Subscription Handling:
+Installation Instructions:  
+Step 1: Clone the Repository  
+Open your terminal (Mac/Linux) or command prompt (Windows) and run:  
+git clone <your-github-repository-link>  
+cd <repository-folder>  
 
-Customers can subscribe to a plan, view their subscription details and usage.
-Admins can assign or modify a user's subscription plan.
-Access Control:
+Step 2: Setup Virtual Environment  
+For Mac/Linux:  
+1. Create a virtual environment:  
+   python3 -m venv venv  
+2. Activate the virtual environment:  
+   source venv/bin/activate  
 
-Before serving any request, the system checks if the user’s subscription plan includes the requested API and if the user is within their usage limits.
-Usage Tracking and Limit Enforcement:
+For Windows:  
+1. Create a virtual environment:  
+   python -m venv venv  
+2. Activate the virtual environment:  
+   venv\Scripts\activate  
 
-The system tracks API usage per user. Once the user reaches the limit for a particular API, access is denied for that API.
-Endpoints Overview:
+Step 3: Install Dependencies  
+After activating the virtual environment, install all required Python packages:  
+pip install fastapi uvicorn  
 
-Subscription Plan Management
+Running the Project:  
+1. Start the FastAPI server:  
+   uvicorn main:app --reload  
+2. Open your browser and go to Swagger UI for testing:  
+   http://127.0.0.1:8000/docs  
 
-POST /plans (Create a new plan)
-PUT /plans/{planId} (Modify an existing plan)
-DELETE /plans/{planId} (Delete a plan)
-Permission Management
+Testing the APIs:  
+Use Swagger UI or Postman to test the endpoints. Below is an overview of available routes:  
 
-POST /permissions (Add Permission)
-PUT /permissions/{permissionId} (Modify Permission)
-DELETE /permissions/{permissionId} (Delete Permission)
-User Subscription Handling
+1. Cloud Service APIs (6 Random APIs):  
+- GET /service1  
+- GET /service2  
+- GET /service3  
+- GET /service4  
+- GET /service5  
+- GET /service6  
 
-POST /subscriptions (Subscribe a user to a plan)
-GET /subscriptions/{userId} (View a user's subscription details)
-GET /subscriptions/{userId}/usage (View usage statistics for a user)
-PUT /subscriptions/{userId} (Assign/Modify a user's plan)
-Access Control
+2. Subscription Plan Management:  
+- POST /plans - Create a subscription plan.  
+- PUT /plans/{plan_name} - Modify a subscription plan.  
+- DELETE /plans/{plan_name} - Delete a subscription plan.  
 
-GET /access/{userId}/{apiRequest} (Check if the user has access to a given API)
-Usage Tracking and Limit Enforcement
+3. Permission Management:  
+- POST /permissions - Add permissions.  
+- PUT /permissions/{permission_name} - Modify permissions.  
+- DELETE /permissions/{permission_name} - Delete permissions.  
 
-POST /usage/{userId} (Record an API request made by a user)
-GET /usage/{userId}/limit (Check the user's current usage against the limit)
-How to Run (For the Instructor):
+4. User Subscription Handling:  
+- POST /subscriptions - Subscribe a user to a plan.  
+- GET /subscriptions/{user_id} - View subscription details.  
 
-Install dependencies:
+5. Access Control:  
+- GET /access/{user_id}/{api_name} - Check API access.  
 
-bash
+6. Usage Tracking:  
+- POST /usage/{user_id}/track - Track API usage.  
+- GET /usage/{user_id} - Get usage statistics.  
 
-pip install fastapi uvicorn sqlalchemy pydantic
-Start the server:
+Deployment:  
+If you want to deploy the project to production, use the following command without --reload:  
+uvicorn main:app --host 0.0.0.0 --port 8000  
 
-bash
+Demo Video:  
+For a demonstration of the project and its functionality, please check the following video:  
+Google Drive Link: https://drive.google.com/file/d/1ya_WVoZtp1HYkudRmEbp9vWszrtajgOT/view?usp=sharing  
 
-uvicorn main:app --reload
-The API documentation and interactive UI is available at:
-http://127.0.0.1:8000/docs
+Contribution:  
+This project was completed individually by Issac Zhou (CWID: 885251249).  
 
-Database:
-
-This implementation uses SQLite for simplicity.
-All data files are automatically generated upon first run.
-Error Handling & Async Programming:
-
-The project uses FastAPI’s async capabilities (e.g., async def endpoints).
-Proper HTTP status codes and JSON responses are returned on errors.
-Code Organization:
-
-A single main.py file containing all routes, models, and logic for simplicity.
-Clear comments are provided in the code to explain functionalities.
+License:  
+This project is licensed under the MIT License.
