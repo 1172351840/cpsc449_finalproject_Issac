@@ -1,191 +1,152 @@
-# ===========================================================
-# Cloud Service Access Management System
-# ===========================================================
-# This script implements the backend system for managing cloud
-# service access based on user subscriptions. It includes CRUD
-# operations for permissions, plans, and user subscriptions,
-# along with access control and usage tracking.
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Dict
+from asyncio import sleep
 
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship
-import json
+app = FastAPI()
 
-# ===========================================================
-# DATABASE SETUP
-# ===========================================================
-DATABASE_URL = "sqlite:///./test.db"
+# Mock Databases
+plans_db: Dict[str, dict] = {}
+permissions_db: Dict[str, dict] = {}
+subscriptions_db: Dict[str, dict] = {}
+usage_db: Dict[str, int] = {}
 
-# Database connection and session setup
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-Base = declarative_base()
-
-# ===========================================================
-# MODELS
-# ===========================================================
-class Permission(Base):
-    """Represents a permission granting access to a specific API endpoint."""
-    __tablename__ = "permissions"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    endpoint = Column(String)
-    description = Column(Text)
-
-class Plan(Base):
-    """Represents a subscription plan with associated permissions and limits."""
-    __tablename__ = "plans"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True)
-    description = Column(Text)
-    permissions_json = Column(Text)  # Stores permissions as JSON string
-    limits_json = Column(Text)  # Stores limits as JSON string
-
-    def get_permissions(self):
-        return json.loads(self.permissions_json) if self.permissions_json else []
-
-    def get_limits(self):
-        return json.loads(self.limits_json) if self.limits_json else {}
-
-class Subscription(Base):
-    """Associates a user with a subscription plan."""
-    __tablename__ = "subscriptions"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, unique=True, index=True)
-    plan_id = Column(Integer, ForeignKey("plans.id"))
-    plan = relationship("Plan", backref="subscriptions")
-
-class Usage(Base):
-    """Tracks the number of times a user has called a specific API."""
-    __tablename__ = "usage"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, index=True)
-    api_name = Column(String)
-    count = Column(Integer, default=0)
-
-# Create all tables
-Base.metadata.create_all(bind=engine)
-
-# ===========================================================
-# SCHEMAS
-# ===========================================================
-class PermissionCreate(BaseModel):
-    name: str
-    endpoint: str
-    description: Optional[str] = None
-
-class PlanCreate(BaseModel):
+# Models
+class Plan(BaseModel):
     name: str
     description: str
-    permissions: List[str] = Field(default_factory=list)
-    limits: Dict[str, int] = Field(default_factory=dict)
+    permissions: List[str]
+    usage_limit: int
 
-class SubscriptionCreate(BaseModel):
-    user_id: int
-    plan_id: int
+class Permission(BaseModel):
+    name: str
+    api_endpoint: str
+    description: str
 
-class UsageStats(BaseModel):
-    api_name: str
-    used: int
-    limit: Optional[int]
+class Subscription(BaseModel):
+    user_id: str
+    plan_name: str
 
-# ===========================================================
-# DEPENDENCIES
-# ===========================================================
-def get_db():
-    """Provides a database session to API endpoints."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Root Endpoint
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to the Cloud Service Access Management System"}
 
-# ===========================================================
-# APPLICATION SETUP
-# ===========================================================
-app = FastAPI(title="Cloud Service Access Management System")
+# Cloud Service APIs (6 Random APIs)
+@app.get("/service1")
+async def service1():
+    await sleep(0.1)
+    return {"message": "Service 1 response"}
 
-# ===========================================================
-# API ENDPOINTS
-# ===========================================================
+@app.get("/service2")
+async def service2():
+    await sleep(0.1)
+    return {"message": "Service 2 response"}
 
-# Permissions Management
-@app.post("/permissions", response_model=dict)
-def create_permission(perm: PermissionCreate, db=Depends(get_db)):
-    """Creates a new permission."""
-    if db.query(Permission).filter(Permission.name == perm.name).first():
-        raise HTTPException(status_code=400, detail="Permission already exists.")
-    new_perm = Permission(name=perm.name, endpoint=perm.endpoint, description=perm.description)
-    db.add(new_perm)
-    db.commit()
-    db.refresh(new_perm)
-    return {"status": "success", "permission_id": new_perm.id}
+@app.get("/service3")
+async def service3():
+    await sleep(0.1)
+    return {"message": "Service 3 response"}
+
+@app.get("/service4")
+async def service4():
+    await sleep(0.1)
+    return {"message": "Service 4 response"}
+
+@app.get("/service5")
+async def service5():
+    await sleep(0.1)
+    return {"message": "Service 5 response"}
+
+@app.get("/service6")
+async def service6():
+    await sleep(0.1)
+    return {"message": "Service 6 response"}
 
 # Subscription Plan Management
-@app.post("/plans", response_model=dict)
-def create_plan(plan: PlanCreate, db=Depends(get_db)):
-    """Creates a new subscription plan."""
-    if db.query(Plan).filter(Plan.name == plan.name).first():
+@app.post("/plans")
+async def create_plan(plan: Plan):
+    if plan.name in plans_db:
         raise HTTPException(status_code=400, detail="Plan already exists.")
-    new_plan = Plan(
-        name=plan.name,
-        description=plan.description,
-        permissions_json=json.dumps(plan.permissions),
-        limits_json=json.dumps(plan.limits)
-    )
-    db.add(new_plan)
-    db.commit()
-    db.refresh(new_plan)
-    return {"status": "success", "plan_id": new_plan.id}
+    plans_db[plan.name] = plan.dict()
+    return {"message": f"Plan '{plan.name}' created successfully"}
+
+@app.put("/plans/{plan_name}")
+async def modify_plan(plan_name: str, plan: Plan):
+    if plan_name not in plans_db:
+        raise HTTPException(status_code=404, detail="Plan not found.")
+    plans_db[plan_name] = plan.dict()
+    return {"message": f"Plan '{plan_name}' modified successfully"}
+
+@app.delete("/plans/{plan_name}")
+async def delete_plan(plan_name: str):
+    if plan_name not in plans_db:
+        raise HTTPException(status_code=404, detail="Plan not found.")
+    del plans_db[plan_name]
+    return {"message": f"Plan '{plan_name}' deleted successfully"}
+
+# Permission Management
+@app.post("/permissions")
+async def add_permission(permission: Permission):
+    if permission.name in permissions_db:
+        raise HTTPException(status_code=400, detail="Permission already exists.")
+    permissions_db[permission.name] = permission.dict()
+    return {"message": f"Permission '{permission.name}' added successfully"}
+
+@app.put("/permissions/{permission_name}")
+async def modify_permission(permission_name: str, permission: Permission):
+    if permission_name not in permissions_db:
+        raise HTTPException(status_code=404, detail="Permission not found.")
+    permissions_db[permission_name] = permission.dict()
+    return {"message": f"Permission '{permission_name}' modified successfully"}
+
+@app.delete("/permissions/{permission_name}")
+async def delete_permission(permission_name: str):
+    if permission_name not in permissions_db:
+        raise HTTPException(status_code=404, detail="Permission not found.")
+    del permissions_db[permission_name]
+    return {"message": f"Permission '{permission_name}' deleted successfully"}
 
 # User Subscription Handling
-@app.post("/subscriptions", response_model=dict)
-def subscribe_user(sub: SubscriptionCreate, db=Depends(get_db)):
-    """Subscribes a user to a plan."""
-    existing_sub = db.query(Subscription).filter(Subscription.user_id == sub.user_id).first()
-    if existing_sub:
-        raise HTTPException(status_code=400, detail="User already subscribed. Update plan instead.")
-    plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
-    if not plan:
+@app.post("/subscriptions")
+async def subscribe_to_plan(subscription: Subscription):
+    if subscription.user_id in subscriptions_db:
+        raise HTTPException(status_code=400, detail="User already subscribed.")
+    if subscription.plan_name not in plans_db:
         raise HTTPException(status_code=404, detail="Plan not found.")
-    new_sub = Subscription(user_id=sub.user_id, plan_id=sub.plan_id)
-    db.add(new_sub)
-    db.commit()
-    db.refresh(new_sub)
-    return {"status": "success", "subscription_id": new_sub.id}
+    subscriptions_db[subscription.user_id] = {"plan_name": subscription.plan_name, "usage_count": 0}
+    return {"message": f"User '{subscription.user_id}' subscribed to plan '{subscription.plan_name}'"}
+
+@app.get("/subscriptions/{user_id}")
+async def get_subscription_details(user_id: str):
+    if user_id not in subscriptions_db:
+        raise HTTPException(status_code=404, detail="Subscription not found.")
+    return subscriptions_db[user_id]
 
 # Access Control
-@app.get("/access/{user_id}/{api_name}", response_model=dict)
-def check_access(user_id: int, api_name: str, db=Depends(get_db)):
-    """Checks if a user has access to an API and enforces limits."""
-    sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-    if not sub:
+@app.get("/access/{user_id}/{api_name}")
+async def check_access(user_id: str, api_name: str):
+    subscription = subscriptions_db.get(user_id)
+    if not subscription:
         raise HTTPException(status_code=404, detail="Subscription not found.")
-    if api_name not in sub.plan.get_permissions():
-        return {"access": False, "reason": "Permission not granted."}
-    usage = db.query(Usage).filter(Usage.user_id == user_id, Usage.api_name == api_name).first()
-    used = usage.count if usage else 0
-    limit = sub.plan.get_limits().get(api_name)
-    if limit is not None and used >= limit:
-        return {"access": False, "reason": "Usage limit reached."}
-    return {"access": True}
+    plan = plans_db.get(subscription["plan_name"])
+    if api_name not in plan["permissions"]:
+        return {"access": "denied", "reason": "API not included in the plan permissions."}
+    if subscription["usage_count"] >= plan["usage_limit"]:
+        return {"access": "denied", "reason": "Usage limit reached."}
+    subscriptions_db[user_id]["usage_count"] += 1
+    return {"access": "granted"}
 
 # Usage Tracking
-@app.post("/usage/{user_id}", response_model=dict)
-def track_usage(user_id: int, api_name: str, db=Depends(get_db)):
-    """Tracks usage of an API by a user."""
-    sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-    if not sub:
+@app.get("/usage/{user_id}")
+async def get_usage(user_id: str):
+    if user_id not in subscriptions_db:
         raise HTTPException(status_code=404, detail="Subscription not found.")
-    if api_name not in sub.plan.get_permissions():
-        raise HTTPException(status_code=403, detail="No permission for this API.")
-    usage = db.query(Usage).filter(Usage.user_id == user_id, Usage.api_name == api_name).first()
-    if not usage:
-        usage = Usage(user_id=user_id, api_name=api_name, count=1)
-        db.add(usage)
-    else:
-        usage.count += 1
-    db.commit()
-    return {"status": "success", "new_count": usage.count}
+    return {"user_id": user_id, "usage_count": subscriptions_db[user_id]["usage_count"]}
+
+@app.post("/usage/{user_id}/track")
+async def track_usage(user_id: str):
+    if user_id not in subscriptions_db:
+        raise HTTPException(status_code=404, detail="Subscription not found.")
+    subscriptions_db[user_id]["usage_count"] += 1
+    return {"message": "Usage tracked successfully"}
