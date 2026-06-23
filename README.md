@@ -1,7 +1,7 @@
 Cloud Service Access Management System
 
 Author: Issac Zhou  
-CWID: 885251249  
+
 
 Project Description:  
 This project implements a backend system for managing access to cloud services based on user subscriptions. The system dynamically manages API permissions, tracks usage, and restricts access when usage limits are exceeded. It features:  
